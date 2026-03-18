@@ -32,7 +32,6 @@ class SAC:
             gradient_steps: int,
             gamma: float,
             tau: float,
-            entropy_coef: float,
             batch_size: int,
             reward_scale: float,
             weight_decay_actor: float=0.0,
@@ -78,8 +77,8 @@ class SAC:
         self.lr_critic = lr_critic
         self.gamma = gamma
         self.tau = tau
-        self.entropy_coef = entropy_coef
         self.reward_scale = reward_scale
+        self.entropy_coef = 1.0 / reward_scale
 
         # Training settings
         self.timesteps = timesteps

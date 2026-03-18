@@ -8,13 +8,15 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+from sac.utils import ensure_tensorf32
+
 EPS = 1e-6
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
 
 class Actor(nn.Module, ABC):
-    """Actor interface for deterministic policies.""" 
+    """Actor interface for squashed gaussian policies.""" 
     def __init__(
             self,
             obs_shape: Tuple[int, ...],
@@ -38,21 +40,12 @@ class Actor(nn.Module, ABC):
 
     @torch.inference_mode()
     def act(self, s: np.ndarray | torch.Tensor, deterministic: bool=True) -> np.ndarray:
-        device = next(self.parameters()).device 
-        if isinstance(s, np.ndarray):
-            s_t = torch.as_tensor(s, dtype=torch.float32, device=device)
-        else:
-            s_t = s.to(device)
-
-        if s_t.dim() == len(self.obs_shape):
-            s_t = s_t.unsqueeze(0)
-        mu, log_std = self(s_t)
+        s_t = ensure_tensorf32(s, next(self.parameters()).device)
+        mu, std = self(s_t)
         
         if deterministic:
             action = mu
         else: 
-            log_std = torch.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX) 
-            std = torch.exp(log_std)
             dist = torch.distributions.Normal(mu, std)
             action = dist.rsample()
 
@@ -62,9 +55,7 @@ class Actor(nn.Module, ABC):
         return action
 
     def sample(self, s: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-        mu, log_std = self(s)                                       # [B, action_dim], [B, action_dim]
-        log_std = torch.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX) 
-        std = torch.exp(log_std)
+        mu, std = self(s)                                       # [B, action_dim], [B, action_dim]
         dist = torch.distributions.Normal(mu, std)
 
         # Reparametrization trick       
@@ -74,17 +65,17 @@ class Actor(nn.Module, ABC):
 
         # Compute correct log-probs
         log_probs = dist.log_prob(a_pre_tanh).sum(dim=-1)           # [B]
-        
-        # NOTE: Instable variant 
+
+        # NOTE: Tanh squashing correction - Instable variant 
         #log_probs -= torch.log(
         #    self.action_scale * (1 - a_tanh.pow(2)) + EPS
         #).sum(dim=-1)                                              # [B]
 
-        # NOTE: More stable variant
-        log_probs -= (
-            2*(np.log(2) - a_pre_tanh - F.softplus(-2*a_pre_tanh))
-        ).sum(dim=1)                                                # [B]
-
+        # NOTE: Tanh squashing correction - Stable variant 
+        log_probs -= (2*(np.log(2) - a_pre_tanh - F.softplus(-2*a_pre_tanh))).sum(dim=-1)
+        
+        # Scaling correction
+        log_probs -= self.action_dim * np.log(self.action_scale)
 
         return a, log_probs
 
@@ -120,13 +111,9 @@ class ActorMLP(Actor):
             self.log_std = nn.Linear(h2_dim, action_dim)
 
         def forward(self, s: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
-            if s.dim() == len(self.obs_shape):
-                s = s.unsqueeze(0)
-            
             hs = self.mlp(s) 
             mu = self.mu(hs)
             log_std = self.log_std(hs)
-            log_std = torch.clamp(log_std, -20, 2)
+            log_std = torch.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
             std = torch.exp(log_std)
-
             return mu, std

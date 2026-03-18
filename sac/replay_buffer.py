@@ -55,3 +55,6 @@ class ReplayBuffer:
         d = torch.as_tensor(self.dones[idx], dtype=torch.float32, device=self.device)
 
         return (s, a, r, s_nxt, d)
+    
+    def __len__(self) -> int:
+        return self.size

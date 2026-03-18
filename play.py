@@ -9,11 +9,11 @@ from sac import ActorMLP
 def parse_args() -> Namespace:
     parser = ArgumentParser(description="Online Evaluation")
 
-    parser.add_argument("--env_id", type=str, default="HalfCheetah-v5")
-    parser.add_argument("--action_scale", type=float, default=1.0)
+    parser.add_argument("--env_id", type=str, default="Pusher-v5")
+    parser.add_argument("--action_scale", type=float, default=2.0)
     parser.add_argument("--h1_dim", type=int, default=256)
     parser.add_argument("--h2_dim", type=int, default=256)
-    parser.add_argument("--weights", type=str, default="HalfCheetah-v5-SAC-Checkpoints-Seed0/HalfCheetah-v5-SAC-Actor-Lr0.0003-t1000000-Seed0.pt")
+    parser.add_argument("--weights", type=str, default="Pusher-v5-SAC-Checkpoints-Seed0/Pusher-v5-SAC-Actor-Lr0.0003-t3000000-Seed0.pt")
 
     parser.add_argument("--verbose", default=True)
 
@@ -28,6 +28,7 @@ def play(env: gym.Env, actor: ActorMLP, n_episodes: int=100) -> None:
         reward_sum = 0.0
         while not done:
             a = actor.act(s, deterministic=True).flatten()
+            # a = env.action_space.sample() 
             s_nxt, reward, terminated, truncated, _ = env.step(a)
             done = terminated or truncated
             s = s_nxt

@@ -2,12 +2,14 @@
 
 PyTorch reimplementation of the SAC algorithm first described in the paper: ["Soft Actor-Critic: Off-Policy Maximum Entropy Deep Reinforcement Learning with a Stochastic Actor"](https://arxiv.org/abs/1801.01290) from Haaranoja et al., 2018.
 
-|    |    |    |    |
-| -- | -- | -- | -- |
-| ![humanoid_gif](./assets/humanoid.gif) | ![hopper_gif](./assets/hopper.gif) | ![walker2d_gif](./assets/walker2d.gif) | ![halfcheetah_gif](./assets/halfcheetah.gif) |
-| ![humanoid_lrcurve](./assets/humanoid_curve.png) | ![hopper_lrcurve](./assets/hopper_curve.png) | ![walker2d_lrcurve](./assets/walker2d_curve.png) |  ![halfcheetah_lrcurve](./assets/halfcheetah_curve.png) |
+*Note: This implementation is based on the OpenAI Spinning Up variant of SAC.*
 
-This implementation is based on the OpenAI Spinning Up variant of SAC.
+|    |    |    |    |    |    |
+| -- | -- | -- | -- | -- | -- |
+| ![pusher_gif](./assets/pusher.gif) | ![humanoid_gif](./assets/humanoid.gif) | ![hopper_gif](./assets/hopper.gif) | ![walker2d_gif](./assets/walker2d.gif) | ![ant_gif](./assets/ant.gif) | ![halfcheetah_gif](./assets/halfcheetah.gif) |
+| ![pusher_lrcurve](./assets/pusher_curve.png) | ![humanoid_lrcurve](./assets/humanoid_curve.png) | ![hopper_lrcurve](./assets/hopper_curve.png) | ![walker2d_lrcurve](./assets/walker2d_curve.png) | ![ant_lrcurve](./assets/ant_curve.png) | ![halfcheetah_lrcurve](./assets/halfcheetah_curve.png) |
+
+Figures: Learning curves for the OpenAI Gym continuous control tasks Pusher-v5, Humanoid-v5, Hopper-v5, Walker2d-v5, Ant-v5, and HalfCheetah-v5. The shaded region represents the standard deviation of the average evaluation over 3 trials (across 3 different seeds). Curves are smoothed with an average filter.
 
 ## Algorithm
 
@@ -30,10 +32,10 @@ This implementation is based on the OpenAI Spinning Up variant of SAC.
 
 ```python
 import gymnasium as gym
-from SAC import SAC, GaussianActorMLP, CriticMLP
+from SAC import SAC, ActorMLP, CriticMLP
 
 env = gym.make("HalfCheetah-v5")
-actor = GausssianActorMLP(state_dim=17, h1_dim=256, h2_dim=256, action_dim=6)
+actor = ActorMLP(state_dim=17, h1_dim=256, h2_dim=256, action_dim=6, action_scale=1.0)
 critic = CriticMLP(state_dim=17, h1_dim=256, h2_dim=256, action_dim=6)
 
 sac = SAC(
@@ -62,7 +64,7 @@ td3.train(env)
 * GPU: NVIDIA GeForce RTX 3060 ti (8GB VRAM)
 * RAM: 32 GB DDR4 3200 MHz
 
-For all environments (Humanoid-v5, Hopper-v5, HalfCheetah-v5, Walker2d-v5, Ant-v5) the following hyperparameters were used:
+For all environments (Pusher-v5, Humanoid-v5, Hopper-v5, HalfCheetah-v5, Walker2d-v5, Ant-v5) the following hyperparameters were used:
 
 | Hyperparameter | Value |
 | -------------- | ----- |
@@ -72,11 +74,25 @@ For all environments (Humanoid-v5, Hopper-v5, HalfCheetah-v5, Walker2d-v5, Ant-v
 | $\tau$ (polyak averaging) | 0.995 |
 | Batch size | 256 |
 | Buffer capacity | 1 000 000 |
-| Buffer start size| 25 000 
+| Buffer start size | 25 000 |
 
-* For HalfCheetah-v5, Hopper-v5 and Walker2d-v5 action_scale was set to 5, and therefore entropy_coef was set to 0.2.
+* For HalfCheetah-v5, Hopper-v5 and Walker2d-v5 action_scale was set to 5, and therefore entropy_coef was 0.2.
 
-* For Humanoid-v5 and HumanoidStandup-v5 action_scale was set to 20, and therefore entropy_coef was set to 0.05.
+* For Humanoid-v5 action_scale was set to 20, and therefore entropy_coef was 0.05.
+
+
+The table below summarizes the achieved performance after ~1M environment steps across three seeds.
+Pusher-v5 was trained for 3M steps. Note that Pusher-v5, HalfCheetah-v5, and Ant-v5 are still far from convergence and would achieve higher returns if trained for longer.
+
+| Environment | Average Return |
+| --  | -- | 
+| Pusher-v5 |  -23.75 ± 1.71 |
+| Humanoid-v5 |  5042.91 ± 65.42 |
+| HalfCheetah-v5 | 8821.033 ± 1453.32 |
+| Ant-v5 |  2894.23	 ± 96.81 |
+| Hopper-v5 | 3279.45 ± 49.56 |
+| Walker2d-v5 | 4293.15 ± 466.90 |
+
 
 ## Citations
 

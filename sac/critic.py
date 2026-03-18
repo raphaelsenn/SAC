@@ -7,6 +7,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 
+from sac.utils import ensure_tensorf32
+
 
 class Critic(nn.Module, ABC):
     """Critic interface for an action-value function.""" 
@@ -38,22 +40,8 @@ class Critic(nn.Module, ABC):
         s: np.ndarray | torch.Tensor, 
         a: np.ndarray | torch.Tensor
     ) -> Tuple[np.ndarray, np.ndarray]:
-        device = next(self.parameters()).device 
-        if isinstance(s, np.ndarray):
-            s_t = torch.as_tensor(s, dtype=torch.float32, device=device)
-        else:
-            s_t = s.to(device)
-        if isinstance(a, np.ndarray):
-            a_t = torch.as_tensor(a, dtype=torch.float32, device=device)
-        else:
-            a_t = a.to(device)
-
-        if s_t.dim() == len(self.obs_shape):
-            s_t.unsqueeze_(0)
-        
-        if a_t.dim() == 1:
-            a_t.unsqueeze_(0)
-
+        s_t = ensure_tensorf32(s, next(self.parameters()).device)
+        a_t = ensure_tensorf32(a, next(self.parameters()).device)
         q1, q2 = self(s_t, a_t)
         return q1.detach().cpu().numpy(), q2.detach().cpu().numpy()
 

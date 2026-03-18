@@ -31,7 +31,6 @@ def parse_args() -> Namespace:
     parser.add_argument("--gamma", type=float, default=0.99)
     parser.add_argument("--tau", type=float, default=0.995)         # OpenAI Spinning Up version w_ <- tau * w_ + (1 - tau) * w
     parser.add_argument("--action_scale", type=float, default=1.0)
-    parser.add_argument("--entropy_coef", type=float, default=0.2)  # Should be 1.0 / reward_scale 
     parser.add_argument("--reward_scale", type=float, default=5.0)
 
     parser.add_argument("--update_target_freq", type=int, default=1)
@@ -57,7 +56,7 @@ def main() -> None:
     state_dim = env.observation_space.shape[0]
     action_dim = env.action_space.shape[0]
 
-    actor = ActorMLP(state_dim, args.h1_dim, args.h2_dim, action_dim)
+    actor = ActorMLP(state_dim, args.h1_dim, args.h2_dim, action_dim, args.action_scale)
     critic = CriticMLP(state_dim, args.h1_dim, args.h2_dim, action_dim)
 
     sac = SAC(
@@ -69,7 +68,6 @@ def main() -> None:
         gradient_steps=args.num_gradient_steps,
         gamma=args.gamma,
         tau=args.tau,
-        entropy_coef=args.entropy_coef,
         batch_size=args.batch_size,
         reward_scale=args.reward_scale,
         weight_decay_actor=args.weight_decay_actor,

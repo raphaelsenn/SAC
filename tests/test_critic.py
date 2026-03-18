@@ -57,12 +57,12 @@ class TestCriticMLP:
         q1, q2 = critic.predict(state, action)
         assert isinstance(q1, np.ndarray)
         assert isinstance(q2, np.ndarray)
-        assert q1.shape == (1, 1)
-        assert q2.shape == (1, 1)
+        assert q1.shape == (1,)
+        assert q2.shape == (1,)
 
     def test_predict_numpy_2(self, critic: CriticMLP, state_np: np.ndarray, action_np: np.ndarray) -> None:
         q1, q2 = critic.predict(state_np, action_np)
         assert isinstance(q1, np.ndarray)
         assert isinstance(q2, np.ndarray)
-        assert q1.shape == (1, 1)
-        assert q2.shape == (1, 1)
+        assert q1.shape == (1,)
+        assert q2.shape == (1,)
